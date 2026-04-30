@@ -1,4 +1,4 @@
-import express from 'express';
+/* import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -47,3 +47,31 @@ app.use(errorHandler);
 app.listen(config.port, () => {
   console.log(`Clover ordering API running on http://localhost:${config.port}`);
 });
+ */
+
+import cors from "cors";
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://chic-liger-636b51.netlify.app",
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allows curl/Postman/server-to-server requests with no browser origin
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-admin-api-key"],
+    credentials: false
+  })
+);

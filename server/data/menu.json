@@ -1,0 +1,92 @@
+[
+  {
+    "id": "footlong-sub",
+    "name": "Footlong Sub",
+    "description": "Our classic footlong on freshly baked bread. Customize with your choice of meat, cheese, toppings, and sauce.",
+    "category": "Build Your Own",
+    "priceCents": 1499,
+    "active": true,
+    "image": "https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    "id": "6inch-sub",
+    "name": "6\" Sub",
+    "description": "A perfectly sized 6-inch sub on freshly baked bread. Customize with your choice of meat, cheese, toppings, and sauce.",
+    "category": "Build Your Own",
+    "priceCents": 899,
+    "active": true,
+    "image": "https://images.unsplash.com/photo-1554433607-66b5efe9d304?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    "id": "6inch-ciabatta",
+    "name": "6\" Ciabatta Bread",
+    "description": "Rustic ciabatta with a crispy crust and soft interior. Customize with your choice of meat, cheese, toppings, and sauce.",
+    "category": "Build Your Own",
+    "priceCents": 999,
+    "active": true,
+    "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    "id": "bagel",
+    "name": "Bagel",
+    "description": "Fresh-baked bagel. Customize with your choice of meat, cheese, toppings, and sauce.",
+    "category": "Build Your Own",
+    "priceCents": 1099,
+    "active": true,
+    "image": "https://images.unsplash.com/photo-1585325701956-60dd9c8553bc?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    "id": "cream-cheese-bagel",
+    "name": "Cream Cheese Bagel",
+    "description": "Fresh-baked bagel generously spread with smooth cream cheese.",
+    "category": "Extras",
+    "priceCents": 499,
+    "active": true,
+    "image": "https://images.unsplash.com/photo-1606101273945-e9eba92c3e8e?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    "id": "bacon-egg-sausage-bagel",
+    "name": "Bacon Egg & Sausage Bagel",
+    "description": "Hearty breakfast bagel loaded with crispy bacon, fluffy egg, and savory sausage.",
+    "category": "Extras",
+    "priceCents": 849,
+    "active": true,
+    "image": "https://images.unsplash.com/photo-1550507992-eb63ffee0847?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    "id": "chips",
+    "name": "Chips",
+    "description": "Single-serve chips to add to your pickup order.",
+    "category": "Convenience",
+    "priceCents": 199,
+    "active": true,
+    "image": "https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    "id": "bottled-water",
+    "name": "Bottled Water",
+    "description": "Cold bottled water ready with your order.",
+    "category": "Convenience",
+    "priceCents": 149,
+    "active": true,
+    "image": "https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    "id": "soda",
+    "name": "Soda",
+    "description": "Chilled canned soda. Selection varies by store availability.",
+    "category": "Convenience",
+    "priceCents": 199,
+    "active": true,
+    "image": "https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    "id": "fresh-pastry",
+    "name": "Fresh Pastry",
+    "description": "Daily pastry selection packed with your pickup order.",
+    "category": "Convenience",
+    "priceCents": 349,
+    "active": true,
+    "image": "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=80"
+  }
+]

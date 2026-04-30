@@ -20,6 +20,8 @@ export const config = {
   appBaseUrl: process.env.APP_BASE_URL || 'http://localhost:5173',
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   adminApiKey: process.env.ADMIN_API_KEY || 'change-this-before-production',
+  adminPassword: process.env.ADMIN_PASSWORD || process.env.ADMIN_API_KEY || 'change-this-before-production',
+  adminTokenSecret: process.env.ADMIN_TOKEN_SECRET || process.env.ADMIN_API_KEY || 'change-this-before-production',
   defaultTaxRateBps: Number(process.env.DEFAULT_TAX_RATE_BPS || 0),
 
   clover: {

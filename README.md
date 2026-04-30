@@ -110,11 +110,13 @@ Visit:
 http://localhost:5173/admin
 ```
 
-Use `ADMIN_API_KEY` from `server/.env`. The starter admin page can:
+Use `ADMIN_PASSWORD` from `server/.env` to log in. The starter admin page can:
 
 - View recent orders.
-- Edit business hour settings JSON.
-- Edit menu JSON.
+- Add, edit, disable, or delete menu items.
+- Update prices, categories, descriptions, and image URLs.
+- Toggle store ordering on/off.
+- Add, edit, disable, or delete pickup windows.
 
 ## Editing business hours
 

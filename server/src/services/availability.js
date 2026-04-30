@@ -23,7 +23,7 @@ export async function getAvailableSlots(dateIso) {
   const zone = settings.timezone || 'America/New_York';
 
   if (!settings.acceptOrders) {
-    return { slots: [], reason: 'Ordering is currently turned off.' };
+    return { slots: [], reason: settings.closedMessage || 'Ordering is currently turned off.' };
   }
 
   const requestedDay = DateTime.fromISO(dateIso, { zone }).startOf('day');
@@ -44,7 +44,7 @@ export async function getAvailableSlots(dateIso) {
   }
 
   const dayName = DAY_NAMES[requestedDay.weekday - 1];
-  const windows = settings.hours?.[dayName] || [];
+  const windows = (settings.hours?.[dayName] || []).filter((window) => window.active !== false);
   const now = DateTime.now().setZone('America/New_York');
   const earliest = now.plus({ minutes: settings.leadTimeMinutes || 30 });
   const interval = settings.slotIntervalMinutes || 15;
@@ -68,7 +68,7 @@ export async function getAvailableSlots(dateIso) {
     }
   }
 
-  return { slots, timezone: zone };
+  return { slots, timezone: zone, reason: slots.length === 0 ? (settings.cutoffMessage || undefined) : undefined };
 }
 
 /**

@@ -140,11 +140,40 @@ Response:
 }
 ```
 
+## Admin login
+
+```http
+POST /api/admin/login
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "password": "your_admin_password"
+}
+```
+
+Response:
+
+```json
+{
+  "token": "admin_session_token"
+}
+```
+
+Use the returned token on admin requests:
+
+```http
+Authorization: Bearer admin_session_token
+```
+
 ## Admin: list orders
 
 ```http
 GET /api/admin/orders?limit=50
-x-admin-api-key: your_admin_key
+Authorization: Bearer admin_session_token
 ```
 
 The storefront also includes a basic admin page at:
@@ -157,14 +186,14 @@ http://localhost:5173/admin
 
 ```http
 GET /api/admin/settings
-x-admin-api-key: your_admin_key
+Authorization: Bearer admin_session_token
 ```
 
 ## Admin: update settings
 
 ```http
 PUT /api/admin/settings
-x-admin-api-key: your_admin_key
+Authorization: Bearer admin_session_token
 Content-Type: application/json
 ```
 
@@ -174,23 +203,48 @@ Request body is the full settings JSON.
 
 ```http
 GET /api/admin/menu
-x-admin-api-key: your_admin_key
+Authorization: Bearer admin_session_token
 ```
 
-## Admin: update menu
+## Admin: create menu item
 
 ```http
-PUT /api/admin/menu
-x-admin-api-key: your_admin_key
+POST /api/admin/menu
+Authorization: Bearer admin_session_token
 Content-Type: application/json
 ```
 
-Request:
+## Admin: update menu item
 
-```json
-{
-  "menu": []
-}
+```http
+PUT /api/admin/menu/:id
+Authorization: Bearer admin_session_token
+Content-Type: application/json
+```
+
+## Admin: delete menu item
+
+```http
+DELETE /api/admin/menu/:id
+Authorization: Bearer admin_session_token
+```
+
+## Admin: pickup windows
+
+```http
+GET /api/admin/pickup-windows
+POST /api/admin/pickup-windows
+PUT /api/admin/pickup-windows/:day/:index
+DELETE /api/admin/pickup-windows/:day/:index
+Authorization: Bearer admin_session_token
+```
+
+## Admin: store status
+
+```http
+GET /api/admin/store-status
+PUT /api/admin/store-status
+Authorization: Bearer admin_session_token
 ```
 
 ## Clover webhook

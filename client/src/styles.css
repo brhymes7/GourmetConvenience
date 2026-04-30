@@ -1532,10 +1532,31 @@ textarea:focus {
   gap: 20px;
 }
 
+.admin-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .admin-login,
 .admin-grid {
   max-width: 1280px;
   margin: 0 auto;
+}
+
+.admin-login-page {
+  display: grid;
+  place-items: center;
+}
+
+.admin-auth-card {
+  width: min(560px, 100%);
+}
+
+.admin-auth-form {
+  display: grid;
+  gap: 14px;
 }
 
 .admin-login {
@@ -1560,6 +1581,38 @@ textarea:focus {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 22px;
+}
+
+.admin-summary {
+  align-self: stretch;
+}
+
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-stats div {
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 15px;
+  background: rgba(255,255,255,0.055);
+}
+
+.admin-stats strong {
+  display: block;
+  color: var(--gold);
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 5px;
+}
+
+.admin-stats span {
+  color: rgba(255,255,255,0.62);
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .admin-panel {
@@ -1588,6 +1641,145 @@ textarea:focus {
   margin: 0;
   font-size: 1.16rem;
   font-weight: 800;
+}
+
+.admin-form {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-form textarea {
+  min-height: 96px;
+}
+
+.admin-menu-form,
+.admin-window-form {
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(255,255,255,0.045);
+  margin-bottom: 18px;
+}
+
+.admin-checks,
+.admin-form-actions,
+.admin-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-checks label,
+.admin-toggle {
+  display: inline-flex;
+  grid-template-columns: unset;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: rgba(255,255,255,0.72);
+}
+
+.admin-checks input,
+.admin-toggle input {
+  width: auto;
+}
+
+.admin-save,
+.admin-secondary,
+.admin-row-actions button {
+  min-height: 40px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 12px;
+  padding: 9px 13px;
+  font-weight: 800;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-save {
+  background: var(--gold);
+  color: var(--navy);
+  border-color: var(--gold);
+}
+
+.admin-secondary,
+.admin-row-actions button {
+  background: rgba(255,255,255,0.07);
+  color: var(--white);
+}
+
+.admin-save:hover,
+.admin-secondary:hover,
+.admin-row-actions button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(244,196,48,0.32);
+}
+
+.admin-save:hover {
+  background: #ffd000;
+  box-shadow: var(--shadow-gold);
+}
+
+.admin-row-actions .danger {
+  color: #fecaca;
+  border-color: rgba(248,113,113,0.28);
+}
+
+.admin-menu-list,
+.pickup-window-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-menu-item,
+.pickup-window-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 13px;
+  background: rgba(255,255,255,0.05);
+}
+
+.pickup-window-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.admin-menu-item.disabled,
+.pickup-window-row.disabled {
+  opacity: 0.62;
+}
+
+.admin-menu-item img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.admin-menu-item strong,
+.pickup-window-row strong {
+  display: block;
+  color: var(--white);
+  font-size: 0.96rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.admin-menu-item p,
+.pickup-window-row p {
+  margin: 0;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.84rem;
+}
+
+.admin-window-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr;
+  gap: 10px;
 }
 
 .admin-panel-head button {
@@ -1708,6 +1900,21 @@ textarea:focus {
   .admin-grid,
   .admin-login {
     grid-template-columns: 1fr;
+  }
+
+  .admin-stats,
+  .admin-window-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-menu-item,
+  .pickup-window-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .admin-row-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
   }
 
   .section {
@@ -1865,5 +2072,34 @@ textarea:focus {
   .mobile-cart-bar {
     width: calc(100% - 32px);
     justify-content: space-between;
+  }
+
+  .admin-page {
+    padding: 24px 16px;
+  }
+
+  .admin-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-header-actions,
+  .admin-header-actions .button {
+    width: 100%;
+  }
+
+  .admin-stats,
+  .admin-window-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-menu-item,
+  .pickup-window-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-menu-item img {
+    width: 100%;
+    height: 150px;
   }
 }

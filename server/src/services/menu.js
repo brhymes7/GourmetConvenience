@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { randomUUID } from 'node:crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -61,10 +62,104 @@ export async function saveMenuItems(menu) {
       category,
       priceCents,
       active: Boolean(item.active),
-      image: String(item.image || '').trim()
+      image: String(item.image || '').trim(),
+      featured: Boolean(item.featured),
+      popular: Boolean(item.popular)
     };
   });
 
   await fs.writeFile(menuPath, JSON.stringify(normalized, null, 2));
   return normalized;
+}
+
+function slugify(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
+function normalizeMenuItem(input = {}, existingId) {
+  const name = String(input.name || '').trim();
+  const category = String(input.category || '').trim();
+  const priceCents = Number(input.priceCents);
+
+  if (!name) {
+    const error = new Error('Item name is required.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!category) {
+    const error = new Error('Category is required.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!Number.isInteger(priceCents) || priceCents < 0) {
+    const error = new Error('Price must be a non-negative amount in cents.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return {
+    id: existingId || slugify(input.id || name) || randomUUID(),
+    name,
+    description: String(input.description || '').trim(),
+    category,
+    priceCents,
+    active: input.active !== false,
+    image: String(input.image || '').trim(),
+    featured: Boolean(input.featured),
+    popular: Boolean(input.popular)
+  };
+}
+
+export async function getMenuCategories() {
+  const menu = await getMenuItems({ includeInactive: true });
+  return [...new Set(menu.map((item) => item.category).filter(Boolean))].sort();
+}
+
+export async function createMenuItem(input) {
+  const menu = await getMenuItems({ includeInactive: true });
+  const item = normalizeMenuItem(input);
+  const ids = new Set(menu.map((menuItem) => menuItem.id));
+  let finalId = item.id;
+  if (ids.has(finalId)) {
+    finalId = `${finalId}-${randomUUID().slice(0, 8)}`;
+  }
+  const updated = [...menu, { ...item, id: finalId }];
+  await saveMenuItems(updated);
+  return { item: { ...item, id: finalId }, menu: updated };
+}
+
+export async function updateMenuItem(id, input) {
+  const menu = await getMenuItems({ includeInactive: true });
+  const index = menu.findIndex((item) => item.id === id);
+  if (index === -1) {
+    const error = new Error('Menu item not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const updatedItem = normalizeMenuItem({ ...menu[index], ...input }, id);
+  const updated = menu.map((item) => (item.id === id ? updatedItem : item));
+  await saveMenuItems(updated);
+  return { item: updatedItem, menu: updated };
+}
+
+export async function deleteMenuItem(id) {
+  const menu = await getMenuItems({ includeInactive: true });
+  const exists = menu.some((item) => item.id === id);
+  if (!exists) {
+    const error = new Error('Menu item not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const updated = menu.filter((item) => item.id !== id);
+  await saveMenuItems(updated);
+  return { menu: updated };
 }

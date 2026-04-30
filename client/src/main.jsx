@@ -2,14 +2,21 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { ShoppingBag, Clock, ShieldCheck, ChevronRight } from 'lucide-react';
 import {
+  adminLogin,
   createCheckout,
+  createAdminMenuItem,
+  createAdminPickupWindow,
+  deleteAdminMenuItem,
+  deleteAdminPickupWindow,
   fetchAdminMenu,
   fetchAdminOrders,
-  fetchAdminSettings,
+  fetchAdminPickupWindows,
+  fetchAdminStoreStatus,
   fetchAvailability,
   fetchMenu,
-  saveAdminMenu,
-  saveAdminSettings
+  updateAdminMenuItem,
+  updateAdminPickupWindow,
+  updateAdminStoreStatus
 } from './api.js';
 import './styles.css';
 
@@ -309,27 +316,91 @@ function StatusPage({ type }) {
 }
 
 function AdminPage() {
-  const [apiKey, setApiKey] = React.useState(() => window.localStorage.getItem('adminApiKey') || '');
+  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const emptyItem = { name: '', description: '', price: '', category: '', image: '', active: true, featured: false, popular: false };
+  const emptyWindow = { day: 'monday', open: '09:00', close: '17:00', active: true, maxOrders: '' };
+  const [token, setToken] = React.useState(() => window.localStorage.getItem('adminToken') || '');
+  const [password, setPassword] = React.useState('');
   const [orders, setOrders] = React.useState([]);
-  const [settingsText, setSettingsText] = React.useState('');
-  const [menuText, setMenuText] = React.useState('');
+  const [menuItems, setMenuItems] = React.useState([]);
+  const [categories, setCategories] = React.useState([]);
+  const [pickupWindows, setPickupWindows] = React.useState([]);
+  const [storeStatus, setStoreStatus] = React.useState({ acceptOrders: true, closedMessage: '', cutoffMessage: '', leadTimeMinutes: 15, slotIntervalMinutes: 15, timezone: 'America/New_York' });
+  const [itemDraft, setItemDraft] = React.useState(emptyItem);
+  const [editingItemId, setEditingItemId] = React.useState('');
+  const [windowDraft, setWindowDraft] = React.useState(emptyWindow);
+  const [editingWindow, setEditingWindow] = React.useState(null);
   const [message, setMessage] = React.useState('');
   const [loading, setLoading] = React.useState(false);
 
-  async function loadAdminData(key = apiKey) {
+  function dayLabel(day) {
+    return day.charAt(0).toUpperCase() + day.slice(1);
+  }
+
+  function toItemDraft(item) {
+    return {
+      name: item.name || '',
+      description: item.description || '',
+      price: ((item.priceCents || 0) / 100).toFixed(2),
+      category: item.category || '',
+      image: item.image || '',
+      active: item.active !== false,
+      featured: Boolean(item.featured),
+      popular: Boolean(item.popular)
+    };
+  }
+
+  function itemPayload(draft) {
+    return {
+      name: draft.name,
+      description: draft.description,
+      priceCents: Math.round(Number(draft.price) * 100),
+      category: draft.category,
+      image: draft.image,
+      active: draft.active,
+      featured: draft.featured,
+      popular: draft.popular
+    };
+  }
+
+  async function loadAdminData(authToken = token) {
+    if (!authToken) return;
     setLoading(true);
     setMessage('');
     try {
-      const [ordersData, settingsData, menuData] = await Promise.all([
-        fetchAdminOrders(key),
-        fetchAdminSettings(key),
-        fetchAdminMenu(key)
+      const [ordersData, menuData, windowsData, statusData] = await Promise.all([
+        fetchAdminOrders(authToken),
+        fetchAdminMenu(authToken),
+        fetchAdminPickupWindows(authToken),
+        fetchAdminStoreStatus(authToken)
       ]);
       setOrders(ordersData.orders || []);
-      setSettingsText(JSON.stringify(settingsData.settings, null, 2));
-      setMenuText(JSON.stringify(menuData.menu, null, 2));
-      window.localStorage.setItem('adminApiKey', key);
-      setMessage('Admin data loaded.');
+      setMenuItems(menuData.menu || []);
+      setCategories(menuData.categories || []);
+      setPickupWindows(windowsData.pickupWindows || []);
+      setStoreStatus(statusData.storeStatus || storeStatus);
+    } catch (err) {
+      setMessage(err.message);
+      if (err.message.toLowerCase().includes('admin')) {
+        window.localStorage.removeItem('adminToken');
+        setToken('');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleLogin(event) {
+    event.preventDefault();
+    setLoading(true);
+    setMessage('');
+    try {
+      const data = await adminLogin(password);
+      setToken(data.token);
+      window.localStorage.setItem('adminToken', data.token);
+      setPassword('');
+      setMessage('Logged in.');
+      await loadAdminData(data.token);
     } catch (err) {
       setMessage(err.message);
     } finally {
@@ -337,14 +408,27 @@ function AdminPage() {
     }
   }
 
-  async function saveSettings() {
+  function logout() {
+    window.localStorage.removeItem('adminToken');
+    setToken('');
+    setOrders([]);
+    setMenuItems([]);
+    setPickupWindows([]);
+  }
+
+  async function saveItem(event) {
+    event.preventDefault();
     setLoading(true);
     setMessage('');
     try {
-      const parsed = JSON.parse(settingsText);
-      const data = await saveAdminSettings(apiKey, parsed);
-      setSettingsText(JSON.stringify(data.settings, null, 2));
-      setMessage('Settings saved.');
+      const data = editingItemId
+        ? await updateAdminMenuItem(token, editingItemId, itemPayload(itemDraft))
+        : await createAdminMenuItem(token, itemPayload(itemDraft));
+      setMenuItems(data.menu || []);
+      setCategories([...new Set((data.menu || []).map((item) => item.category).filter(Boolean))].sort());
+      setItemDraft(emptyItem);
+      setEditingItemId('');
+      setMessage(editingItemId ? 'Menu item updated.' : 'Menu item added.');
     } catch (err) {
       setMessage(err.message);
     } finally {
@@ -352,19 +436,101 @@ function AdminPage() {
     }
   }
 
-  async function saveMenu() {
+  async function removeItem(item) {
+    if (!window.confirm(`Delete ${item.name}? This removes it from the menu.`)) return;
     setLoading(true);
     setMessage('');
     try {
-      const parsed = JSON.parse(menuText);
-      const data = await saveAdminMenu(apiKey, parsed);
-      setMenuText(JSON.stringify(data.menu, null, 2));
-      setMessage('Menu saved.');
+      const data = await deleteAdminMenuItem(token, item.id);
+      setMenuItems(data.menu || []);
+      setMessage('Menu item deleted.');
     } catch (err) {
       setMessage(err.message);
     } finally {
       setLoading(false);
     }
+  }
+
+  async function toggleItem(item) {
+    const data = await updateAdminMenuItem(token, item.id, { ...item, active: !item.active });
+    setMenuItems(data.menu || []);
+    setMessage(item.active ? 'Item disabled.' : 'Item enabled.');
+  }
+
+  async function savePickupWindow(event) {
+    event.preventDefault();
+    setLoading(true);
+    setMessage('');
+    try {
+      const payload = { ...windowDraft, maxOrders: windowDraft.maxOrders === '' ? null : Number(windowDraft.maxOrders) };
+      const data = editingWindow
+        ? await updateAdminPickupWindow(token, editingWindow.day, editingWindow.index, payload)
+        : await createAdminPickupWindow(token, payload);
+      setPickupWindows(data.pickupWindows || []);
+      setWindowDraft(emptyWindow);
+      setEditingWindow(null);
+      setMessage(editingWindow ? 'Pickup window updated.' : 'Pickup window added.');
+    } catch (err) {
+      setMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function removePickupWindow(windowItem) {
+    if (!window.confirm(`Delete ${dayLabel(windowItem.day)} ${windowItem.open} - ${windowItem.close}?`)) return;
+    setLoading(true);
+    setMessage('');
+    try {
+      const data = await deleteAdminPickupWindow(token, windowItem.day, windowItem.index);
+      setPickupWindows(data.pickupWindows || []);
+      setMessage('Pickup window deleted.');
+    } catch (err) {
+      setMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function saveStoreStatus(event) {
+    event.preventDefault();
+    setLoading(true);
+    setMessage('');
+    try {
+      const data = await updateAdminStoreStatus(token, storeStatus);
+      setStoreStatus(data.storeStatus);
+      setMessage('Store status saved.');
+    } catch (err) {
+      setMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  React.useEffect(() => {
+    if (token) loadAdminData(token);
+  }, []);
+
+  if (!token) {
+    return (
+      <main className="admin-page admin-login-page">
+        <section className="status-card admin-auth-card">
+          <img src="/logo.png" alt="Gourmet Convenience" className="status-logo" />
+          <p className="eyebrow">Admin Login</p>
+          <h1>Store Operations</h1>
+          <p className="status-copy">Sign in to manage menu items, pricing, availability, and pickup windows.</p>
+          <form onSubmit={handleLogin} className="admin-auth-form">
+            <label htmlFor="admin-password">Admin password
+              <input id="admin-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
+            </label>
+            {message && <p className="message">{message}</p>}
+            <button className="button primary" type="submit" disabled={loading || !password}>
+              {loading ? 'Signing in...' : 'Sign in'}
+            </button>
+          </form>
+        </section>
+      </main>
+    );
   }
 
   return (
@@ -374,34 +540,129 @@ function AdminPage() {
           <p className="eyebrow">Admin</p>
           <h1>Store Operations</h1>
         </div>
-        <a href="/" className="button secondary">Storefront</a>
+        <div className="admin-header-actions">
+          <button type="button" className="button secondary" onClick={() => loadAdminData()} disabled={loading}>Refresh</button>
+          <a href="/" className="button secondary">Storefront</a>
+          <button type="button" className="button secondary" onClick={logout}>Log out</button>
+        </div>
       </header>
-
-      <section className="admin-login">
-        <label htmlFor="admin-key">Admin API key
-          <input
-            id="admin-key"
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="x-admin-api-key"
-          />
-        </label>
-        <button className="button primary" type="button" onClick={() => loadAdminData()} disabled={loading || !apiKey}>
-          {loading ? 'Loading...' : 'Load admin data'}
-        </button>
-      </section>
       {message && <p className="message admin-message">{message}</p>}
 
       <section className="admin-grid">
+        <div className="admin-panel admin-summary">
+          <div className="admin-panel-head">
+            <h2>Dashboard</h2>
+          </div>
+          <div className="admin-stats">
+            <div><strong>{menuItems.length}</strong><span>Menu items</span></div>
+            <div><strong>{categories.length}</strong><span>Categories</span></div>
+            <div><strong>{pickupWindows.length}</strong><span>Pickup windows</span></div>
+            <div><strong>{storeStatus.acceptOrders ? 'Open' : 'Closed'}</strong><span>Store status</span></div>
+          </div>
+        </div>
+
         <div className="admin-panel">
           <div className="admin-panel-head">
+            <h2>Store Status</h2>
+          </div>
+          <form className="admin-form" onSubmit={saveStoreStatus}>
+            <label className="admin-toggle"><input type="checkbox" checked={storeStatus.acceptOrders} onChange={(e) => setStoreStatus({ ...storeStatus, acceptOrders: e.target.checked })} /> Accept online orders</label>
+            <label>Closed message<input value={storeStatus.closedMessage || ''} onChange={(e) => setStoreStatus({ ...storeStatus, closedMessage: e.target.value })} placeholder="Pickup resumes tomorrow at 9 AM" /></label>
+            <label>Cutoff message<input value={storeStatus.cutoffMessage || ''} onChange={(e) => setStoreStatus({ ...storeStatus, cutoffMessage: e.target.value })} placeholder="No more pickup slots today." /></label>
+            <div className="field-grid">
+              <label>Lead time minutes<input type="number" min="0" value={storeStatus.leadTimeMinutes} onChange={(e) => setStoreStatus({ ...storeStatus, leadTimeMinutes: e.target.value })} /></label>
+              <label>Slot interval minutes<input type="number" min="1" value={storeStatus.slotIntervalMinutes} onChange={(e) => setStoreStatus({ ...storeStatus, slotIntervalMinutes: e.target.value })} /></label>
+            </div>
+            <button type="submit" className="admin-save" disabled={loading}>Save status</button>
+          </form>
+        </div>
+
+        <div className="admin-panel wide">
+          <div className="admin-panel-head">
+            <h2>Menu</h2>
+            <span className="admin-empty">{menuItems.length} items</span>
+          </div>
+          <form className="admin-form admin-menu-form" onSubmit={saveItem}>
+            <div className="field-grid">
+              <label>Name<input value={itemDraft.name} onChange={(e) => setItemDraft({ ...itemDraft, name: e.target.value })} required /></label>
+              <label>Price<input type="number" min="0" step="0.01" value={itemDraft.price} onChange={(e) => setItemDraft({ ...itemDraft, price: e.target.value })} required /></label>
+            </div>
+            <label>Description<textarea value={itemDraft.description} onChange={(e) => setItemDraft({ ...itemDraft, description: e.target.value })} /></label>
+            <div className="field-grid">
+              <label>Category<input list="admin-categories" value={itemDraft.category} onChange={(e) => setItemDraft({ ...itemDraft, category: e.target.value })} required /></label>
+              <label>Image URL<input value={itemDraft.image} onChange={(e) => setItemDraft({ ...itemDraft, image: e.target.value })} /></label>
+            </div>
+            <datalist id="admin-categories">{categories.map((category) => <option key={category} value={category} />)}</datalist>
+            <div className="admin-checks">
+              <label><input type="checkbox" checked={itemDraft.active} onChange={(e) => setItemDraft({ ...itemDraft, active: e.target.checked })} /> Available</label>
+              <label><input type="checkbox" checked={itemDraft.featured} onChange={(e) => setItemDraft({ ...itemDraft, featured: e.target.checked })} /> Featured</label>
+              <label><input type="checkbox" checked={itemDraft.popular} onChange={(e) => setItemDraft({ ...itemDraft, popular: e.target.checked })} /> Popular</label>
+            </div>
+            <div className="admin-form-actions">
+              <button type="submit" className="admin-save" disabled={loading}>{editingItemId ? 'Save item' : 'Add item'}</button>
+              {editingItemId && <button type="button" className="admin-secondary" onClick={() => { setEditingItemId(''); setItemDraft(emptyItem); }}>Cancel</button>}
+            </div>
+          </form>
+          <div className="admin-menu-list">
+            {menuItems.map((item) => (
+              <article className={`admin-menu-item ${item.active ? '' : 'disabled'}`} key={item.id}>
+                <img src={item.image || '/logo.png'} alt="" />
+                <div>
+                  <strong>{item.name}</strong>
+                  <p>{item.category} · {money(item.priceCents)} · {item.active ? 'Available' : 'Hidden'}</p>
+                </div>
+                <div className="admin-row-actions">
+                  <button type="button" onClick={() => { setEditingItemId(item.id); setItemDraft(toItemDraft(item)); }}>Edit</button>
+                  <button type="button" onClick={() => toggleItem(item)}>{item.active ? 'Disable' : 'Enable'}</button>
+                  <button type="button" className="danger" onClick={() => removeItem(item)}>Delete</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="admin-panel wide">
+          <div className="admin-panel-head">
+            <h2>Pickup Windows</h2>
+            <span className="admin-empty">Controls customer pickup times</span>
+          </div>
+          <form className="admin-form admin-window-form" onSubmit={savePickupWindow}>
+            <div className="admin-window-grid">
+              <label>Day<select value={windowDraft.day} onChange={(e) => setWindowDraft({ ...windowDraft, day: e.target.value })}>{days.map((day) => <option key={day} value={day}>{dayLabel(day)}</option>)}</select></label>
+              <label>Start<input type="time" value={windowDraft.open} onChange={(e) => setWindowDraft({ ...windowDraft, open: e.target.value })} required /></label>
+              <label>End<input type="time" value={windowDraft.close} onChange={(e) => setWindowDraft({ ...windowDraft, close: e.target.value })} required /></label>
+              <label>Max orders<input type="number" min="0" value={windowDraft.maxOrders || ''} onChange={(e) => setWindowDraft({ ...windowDraft, maxOrders: e.target.value })} placeholder="Optional" /></label>
+            </div>
+            <label className="admin-toggle"><input type="checkbox" checked={windowDraft.active} onChange={(e) => setWindowDraft({ ...windowDraft, active: e.target.checked })} /> Pickup window active</label>
+            <div className="admin-form-actions">
+              <button type="submit" className="admin-save" disabled={loading}>{editingWindow ? 'Save window' : 'Add window'}</button>
+              {editingWindow && <button type="button" className="admin-secondary" onClick={() => { setEditingWindow(null); setWindowDraft(emptyWindow); }}>Cancel</button>}
+            </div>
+          </form>
+          <div className="pickup-window-list">
+            {pickupWindows.length === 0 ? <p className="admin-empty">No pickup windows configured.</p> : pickupWindows.map((windowItem) => (
+              <article className={`pickup-window-row ${windowItem.active ? '' : 'disabled'}`} key={windowItem.id}>
+                <div>
+                  <strong>{dayLabel(windowItem.day)} {windowItem.open} - {windowItem.close}</strong>
+                  <p>{windowItem.active ? 'Customers can choose this window' : 'Disabled'}{windowItem.maxOrders ? ` · Max ${windowItem.maxOrders} orders` : ''}</p>
+                </div>
+                <div className="admin-row-actions">
+                  <button type="button" onClick={() => { setEditingWindow(windowItem); setWindowDraft({ day: windowItem.day, open: windowItem.open, close: windowItem.close, active: windowItem.active, maxOrders: windowItem.maxOrders || '' }); }}>Edit</button>
+                  <button type="button" onClick={() => updateAdminPickupWindow(token, windowItem.day, windowItem.index, { ...windowItem, active: !windowItem.active }).then((data) => { setPickupWindows(data.pickupWindows || []); setMessage(windowItem.active ? 'Pickup window disabled.' : 'Pickup window enabled.'); }).catch((err) => setMessage(err.message))}>{windowItem.active ? 'Disable' : 'Enable'}</button>
+                  <button type="button" className="danger" onClick={() => removePickupWindow(windowItem)}>Delete</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="admin-panel wide">
+          <div className="admin-panel-head">
             <h2>Recent Orders</h2>
-            <button type="button" onClick={() => loadAdminData()} disabled={loading || !apiKey}>Refresh</button>
           </div>
           <div className="admin-orders">
             {orders.length === 0 ? (
-              <p className="admin-empty">No orders loaded.</p>
+              <p className="admin-empty">No orders yet.</p>
             ) : orders.map((order) => (
               <article className="admin-order" key={order.id}>
                 <div>
@@ -418,22 +679,6 @@ function AdminPage() {
               </article>
             ))}
           </div>
-        </div>
-
-        <div className="admin-panel">
-          <div className="admin-panel-head">
-            <h2>Business Hours</h2>
-            <button type="button" onClick={saveSettings} disabled={loading || !apiKey || !settingsText}>Save</button>
-          </div>
-          <textarea className="admin-json" value={settingsText} onChange={(e) => setSettingsText(e.target.value)} spellCheck="false" />
-        </div>
-
-        <div className="admin-panel wide">
-          <div className="admin-panel-head">
-            <h2>Menu</h2>
-            <button type="button" onClick={saveMenu} disabled={loading || !apiKey || !menuText}>Save</button>
-          </div>
-          <textarea className="admin-json menu-json" value={menuText} onChange={(e) => setMenuText(e.target.value)} spellCheck="false" />
         </div>
       </section>
     </main>

@@ -27,6 +27,8 @@ PORT=5001
 APP_BASE_URL=https://your-frontend-domain.com
 CLIENT_ORIGIN=https://your-frontend-domain.com
 ADMIN_API_KEY=long-random-secret
+ADMIN_PASSWORD=long-random-admin-password
+ADMIN_TOKEN_SECRET=long-random-token-signing-secret
 CLOVER_ENV=production
 CLOVER_MERCHANT_ID=live_merchant_id
 CLOVER_PRIVATE_TOKEN=live_private_token
@@ -91,6 +93,6 @@ server {
 - [ ] Webhook signing secret is configured.
 - [ ] SQLite file is on persistent disk.
 - [ ] Backups are configured.
-- [ ] Admin API key is strong.
+- [ ] Admin password and token secret are strong.
 - [ ] Rate limiting is added.
 - [ ] Tax behavior is confirmed with the merchant/accountant.
